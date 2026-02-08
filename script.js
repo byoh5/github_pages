@@ -7,7 +7,14 @@ const copyPanelImageBtn = document.getElementById("copyPanelImage");
 const saveBtn = document.getElementById("save");
 const clearBtn = document.getElementById("clear");
 const historyList = document.getElementById("historyList");
-const fixedInputs = Array.from(document.querySelectorAll(".fixed-input"));
+const fixedSlots = Array.from(document.querySelectorAll("#fixedSlots [data-slot]"));
+const fixedClearBtn = document.getElementById("fixedClear");
+const sheetBackdropEl = document.getElementById("numberSheet");
+const sheetGridEl = document.getElementById("sheetGrid");
+const sheetCloseBtn = document.getElementById("sheetClose");
+const sheetDoneBtn = document.getElementById("sheetDone");
+const sheetClearSlotBtn = document.getElementById("sheetClearSlot");
+const sheetSubEl = document.getElementById("sheetSub");
 const panelEl = document.querySelector(".panel");
 
 const STORAGE_KEY = "lotto_history_v1";
@@ -16,6 +23,8 @@ const ROLL_TICK_MS = 60;
 let selectedGameCount = 5;
 let currentGames = [];
 let isAnimating = false;
+let fixedNumbers = new Array(6).fill(null);
+let activeFixedSlot = 0;
 
 const BALL_STYLES = [
   // Same range classes used on dhlottery: 1-10, 11-20, 21-30, 31-40, 41-45.
@@ -130,27 +139,71 @@ async function animateRevealGames(games) {
   }
 }
 
-function parseFixedInputs() {
-  const fixed = new Array(6).fill(null);
-  const seen = new Set();
+function renderFixedSlots() {
+  fixedSlots.forEach((slotBtn) => {
+    const idx = Number(slotBtn.dataset.slot);
+    const num = fixedNumbers[idx];
 
-  for (let i = 0; i < fixedInputs.length; i += 1) {
-    const raw = fixedInputs[i].value.trim();
-    if (!raw) continue;
-    const num = Number(raw);
-
-    if (!Number.isInteger(num) || num < 1 || num > 45) {
-      throw new Error("고정 번호는 1~45 사이의 숫자만 가능합니다.");
-    }
-    if (seen.has(num)) {
-      throw new Error("고정 번호는 서로 다른 숫자여야 합니다.");
+    if (num === null) {
+      slotBtn.className = "ball fixed-slot";
+      slotBtn.textContent = "?";
+      slotBtn.setAttribute("aria-label", `${idx + 1}번째 고정 번호 선택 (비어있음)`);
+      return;
     }
 
-    fixed[i] = num;
-    seen.add(num);
+    applyBallAppearance(slotBtn, num, false, ["fixed-slot"]);
+    slotBtn.setAttribute("aria-label", `${idx + 1}번째 고정 번호 ${num} (탭하여 변경)`);
+  });
+}
+
+function closeNumberSheet() {
+  if (!sheetBackdropEl) return;
+  sheetBackdropEl.hidden = true;
+  sheetBackdropEl.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("has-sheet");
+}
+
+function renderNumberSheet() {
+  if (!sheetGridEl) return;
+
+  if (sheetSubEl) {
+    sheetSubEl.textContent = `${activeFixedSlot + 1}번째 자리 선택`;
   }
 
-  return fixed;
+  sheetGridEl.innerHTML = "";
+  const selected = fixedNumbers[activeFixedSlot];
+
+  for (let num = 1; num <= 45; num += 1) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    applyBallAppearance(btn, num, false, ["pick-ball"]);
+
+    const isUsed = fixedNumbers.includes(num) && selected !== num;
+    if (isUsed) {
+      btn.disabled = true;
+    }
+    if (selected === num) {
+      btn.classList.add("is-selected");
+    }
+
+    btn.addEventListener("click", () => {
+      fixedNumbers[activeFixedSlot] = num;
+      renderFixedSlots();
+      closeNumberSheet();
+    });
+
+    sheetGridEl.appendChild(btn);
+  }
+}
+
+function openNumberSheet(slotIndex) {
+  activeFixedSlot = slotIndex;
+  renderNumberSheet();
+
+  if (!sheetBackdropEl) return;
+  sheetBackdropEl.hidden = false;
+  sheetBackdropEl.setAttribute("aria-hidden", "false");
+  document.body.classList.add("has-sheet");
 }
 
 function loadHistory() {
@@ -209,18 +262,21 @@ function setControlsDisabled(disabled) {
   copyPanelImageBtn.disabled = disabled || currentGames.length === 0;
   saveBtn.disabled = disabled || currentGames.length === 0;
   clearBtn.disabled = disabled;
+  gameCountButtons.forEach((btn) => {
+    btn.disabled = disabled;
+  });
+  fixedSlots.forEach((btn) => {
+    btn.disabled = disabled;
+  });
+  if (fixedClearBtn) {
+    fixedClearBtn.disabled = disabled;
+  }
 }
 
 generateBtn.addEventListener("click", async () => {
   if (isAnimating) return;
-  let fixed;
-
-  try {
-    fixed = parseFixedInputs();
-  } catch (err) {
-    alert(err.message);
-    return;
-  }
+  closeNumberSheet();
+  const fixed = fixedNumbers.slice();
 
   isAnimating = true;
   setControlsDisabled(true);
@@ -310,38 +366,27 @@ function renderGamesImage(games) {
 
 async function copyNumbersImage() {
   if (currentGames.length === 0) return;
-  if (!navigator.clipboard || !window.ClipboardItem) {
-    alert("이미지 복사는 최신 브라우저에서만 지원됩니다.");
-    return;
-  }
-  if (!window.isSecureContext) {
-    alert("이미지 복사를 위해서는 HTTPS 또는 로컬 환경이 필요합니다.");
-    return;
-  }
-
   const canvas = renderGamesImage(currentGames);
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) {
     alert("이미지 생성에 실패했습니다.");
     return;
   }
-
-  await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-  alert("이미지가 클립보드에 복사되었습니다.");
+  const filename = `lotto_${formatDate(new Date()).replace(/[: ]/g, "-")}_${currentGames.length}games.png`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 async function capturePanelImage() {
   if (!panelEl) return;
   if (!window.html2canvas) {
     alert("전체 캡처를 위해 html2canvas가 필요합니다.");
-    return;
-  }
-  if (!navigator.clipboard || !window.ClipboardItem) {
-    alert("이미지 복사는 최신 브라우저에서만 지원됩니다.");
-    return;
-  }
-  if (!window.isSecureContext) {
-    alert("이미지 복사를 위해서는 HTTPS 또는 로컬 환경이 필요합니다.");
     return;
   }
 
@@ -354,8 +399,15 @@ async function capturePanelImage() {
     alert("이미지 생성에 실패했습니다.");
     return;
   }
-  await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-  alert("전체 캡처 이미지가 클립보드에 복사되었습니다.");
+  const filename = `lotto_panel_${formatDate(new Date()).replace(/[: ]/g, "-")}.png`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 copyNumbersImageBtn.addEventListener("click", () => {
@@ -412,3 +464,51 @@ gameCountButtons.forEach((btn) => {
 
 setSelectedGameCount(selectedGameCount);
 createGameSlots(selectedGameCount);
+
+fixedSlots.forEach((slotBtn) => {
+  slotBtn.addEventListener("click", () => {
+    if (isAnimating) return;
+    openNumberSheet(Number(slotBtn.dataset.slot));
+  });
+});
+
+if (fixedClearBtn) {
+  fixedClearBtn.addEventListener("click", () => {
+    if (isAnimating) return;
+    fixedNumbers = new Array(6).fill(null);
+    renderFixedSlots();
+    renderNumberSheet();
+  });
+}
+
+if (sheetCloseBtn) {
+  sheetCloseBtn.addEventListener("click", closeNumberSheet);
+}
+
+if (sheetDoneBtn) {
+  sheetDoneBtn.addEventListener("click", closeNumberSheet);
+}
+
+if (sheetClearSlotBtn) {
+  sheetClearSlotBtn.addEventListener("click", () => {
+    fixedNumbers[activeFixedSlot] = null;
+    renderFixedSlots();
+    renderNumberSheet();
+  });
+}
+
+if (sheetBackdropEl) {
+  sheetBackdropEl.addEventListener("click", (event) => {
+    if (event.target === sheetBackdropEl) {
+      closeNumberSheet();
+    }
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && sheetBackdropEl && !sheetBackdropEl.hidden) {
+    closeNumberSheet();
+  }
+});
+
+renderFixedSlots();
