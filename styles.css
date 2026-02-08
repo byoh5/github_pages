@@ -479,6 +479,25 @@ button.ball:disabled {
   padding: 14px;
 }
 
+.sheet--image {
+  max-height: min(86vh, 820px);
+}
+
+.image-preview {
+  border-radius: 18px;
+  border: 1px solid var(--stroke);
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(16, 24, 40, 0.12);
+  overflow: hidden;
+  margin: 6px;
+}
+
+.image-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .sheet-header {
   display: flex;
   align-items: center;

@@ -15,6 +15,12 @@ const sheetCloseBtn = document.getElementById("sheetClose");
 const sheetDoneBtn = document.getElementById("sheetDone");
 const sheetClearSlotBtn = document.getElementById("sheetClearSlot");
 const sheetSubEl = document.getElementById("sheetSub");
+const imageSheetEl = document.getElementById("imageSheet");
+const imageSheetImgEl = document.getElementById("imageSheetImg");
+const imageSheetCloseBtn = document.getElementById("imageSheetClose");
+const imageSheetDownloadBtn = document.getElementById("imageSheetDownload");
+const imageSheetShareBtn = document.getElementById("imageSheetShare");
+const imageSheetTitleEl = document.getElementById("imageSheetTitle");
 const panelEl = document.querySelector(".panel");
 
 const STORAGE_KEY = "lotto_history_v1";
@@ -25,6 +31,10 @@ let currentGames = [];
 let isAnimating = false;
 let fixedNumbers = new Array(6).fill(null);
 let activeFixedSlot = 0;
+let imageSheetObjectUrl = null;
+let imageSheetBlob = null;
+let imageSheetFilename = "";
+let imageSheetTitle = "";
 
 const BALL_STYLES = [
   // Same range classes used on dhlottery: 1-10, 11-20, 21-30, 31-40, 41-45.
@@ -156,11 +166,17 @@ function renderFixedSlots() {
   });
 }
 
+function updateSheetState() {
+  const anyOpen =
+    (sheetBackdropEl && !sheetBackdropEl.hidden) || (imageSheetEl && !imageSheetEl.hidden);
+  document.body.classList.toggle("has-sheet", anyOpen);
+}
+
 function closeNumberSheet() {
   if (!sheetBackdropEl) return;
   sheetBackdropEl.hidden = true;
   sheetBackdropEl.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("has-sheet");
+  updateSheetState();
 }
 
 function renderNumberSheet() {
@@ -198,12 +214,56 @@ function renderNumberSheet() {
 
 function openNumberSheet(slotIndex) {
   activeFixedSlot = slotIndex;
+  closeImageSheet();
   renderNumberSheet();
 
   if (!sheetBackdropEl) return;
   sheetBackdropEl.hidden = false;
   sheetBackdropEl.setAttribute("aria-hidden", "false");
-  document.body.classList.add("has-sheet");
+  updateSheetState();
+}
+
+function closeImageSheet() {
+  if (!imageSheetEl) return;
+  imageSheetEl.hidden = true;
+  imageSheetEl.setAttribute("aria-hidden", "true");
+  if (imageSheetObjectUrl) {
+    URL.revokeObjectURL(imageSheetObjectUrl);
+    imageSheetObjectUrl = null;
+  }
+  imageSheetBlob = null;
+  imageSheetFilename = "";
+  imageSheetTitle = "";
+  updateSheetState();
+}
+
+function openImageSheet(blob, filename, title) {
+  closeNumberSheet();
+  imageSheetBlob = blob;
+  imageSheetFilename = filename;
+  imageSheetTitle = title;
+
+  if (imageSheetTitleEl) {
+    imageSheetTitleEl.textContent = title;
+  }
+  if (imageSheetImgEl) {
+    if (imageSheetObjectUrl) URL.revokeObjectURL(imageSheetObjectUrl);
+    imageSheetObjectUrl = URL.createObjectURL(blob);
+    imageSheetImgEl.src = imageSheetObjectUrl;
+  }
+
+  if (imageSheetShareBtn) {
+    const canShare =
+      window.isSecureContext &&
+      navigator.share &&
+      (!navigator.canShare || navigator.canShare({ files: [new File([blob], filename, { type: "image/png" })] }));
+    imageSheetShareBtn.disabled = !canShare;
+  }
+
+  if (!imageSheetEl) return;
+  imageSheetEl.hidden = false;
+  imageSheetEl.setAttribute("aria-hidden", "false");
+  updateSheetState();
 }
 
 function loadHistory() {
@@ -373,7 +433,7 @@ async function copyNumbersImage() {
     return;
   }
   const filename = `lotto_${formatDate(new Date()).replace(/[: ]/g, "-")}_${currentGames.length}games.png`;
-  await shareOrDownloadImage(blob, filename, "로또 번호");
+  openImageSheet(blob, filename, "로또 번호");
 }
 
 async function capturePanelImage() {
@@ -393,39 +453,29 @@ async function capturePanelImage() {
     return;
   }
   const filename = `lotto_panel_${formatDate(new Date()).replace(/[: ]/g, "-")}.png`;
-  await shareOrDownloadImage(blob, filename, "로또 전체 캡처");
+  openImageSheet(blob, filename, "로또 전체 캡처");
 }
 
-async function shareOrDownloadImage(blob, filename, title) {
-  const file = new File([blob], filename, { type: "image/png" });
-
-  if (window.isSecureContext && navigator.share) {
-    try {
-      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title });
-        return;
-      }
-    } catch (err) {
-      if (err?.name === "AbortError") return;
-    }
-  }
-
-  // Fallback: download (Android/desktop) or open in a new tab (iOS Safari often ignores download).
+async function downloadImage(blob, filename) {
   const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
 
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } catch (err) {
-    window.open(url, "_blank", "noopener,noreferrer");
-    alert("이미지가 새 탭으로 열렸습니다. 길게 눌러 저장해 주세요.");
-  } finally {
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+async function shareImage(blob, filename, title) {
+  if (!window.isSecureContext || !navigator.share) {
+    throw new Error("share_not_supported");
   }
+  const file = new File([blob], filename, { type: "image/png" });
+  if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+    throw new Error("share_not_supported");
+  }
+  await navigator.share({ files: [file], title });
 }
 
 copyNumbersImageBtn.addEventListener("click", () => {
@@ -523,10 +573,46 @@ if (sheetBackdropEl) {
   });
 }
 
+if (imageSheetEl) {
+  imageSheetEl.addEventListener("click", (event) => {
+    if (event.target === imageSheetEl) {
+      closeImageSheet();
+    }
+  });
+}
+
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && sheetBackdropEl && !sheetBackdropEl.hidden) {
+  if (event.key !== "Escape") return;
+  if (sheetBackdropEl && !sheetBackdropEl.hidden) {
     closeNumberSheet();
+    return;
+  }
+  if (imageSheetEl && !imageSheetEl.hidden) {
+    closeImageSheet();
   }
 });
 
 renderFixedSlots();
+
+if (imageSheetCloseBtn) {
+  imageSheetCloseBtn.addEventListener("click", closeImageSheet);
+}
+
+if (imageSheetDownloadBtn) {
+  imageSheetDownloadBtn.addEventListener("click", () => {
+    if (!imageSheetBlob) return;
+    downloadImage(imageSheetBlob, imageSheetFilename).catch(() => {
+      alert("파일 저장에 실패했습니다.");
+    });
+  });
+}
+
+if (imageSheetShareBtn) {
+  imageSheetShareBtn.addEventListener("click", () => {
+    if (!imageSheetBlob) return;
+    shareImage(imageSheetBlob, imageSheetFilename, imageSheetTitle).catch((err) => {
+      if (err?.name === "AbortError") return;
+      alert("공유/저장이 지원되지 않는 브라우저입니다. 이미지를 길게 눌러 저장해 주세요.");
+    });
+  });
+}
