@@ -10,7 +10,6 @@
   --shadow: 0 24px 60px rgba(31, 35, 40, 0.14);
   --radius: 22px;
   --font: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
-  --display: "Fraunces", "Times New Roman", serif;
 }
 
 * {
@@ -52,7 +51,6 @@ body {
 
 h1 {
   margin: 0;
-  font-family: var(--display);
   font-size: clamp(2.3rem, 5vw, 3.6rem);
   letter-spacing: -0.02em;
 }
