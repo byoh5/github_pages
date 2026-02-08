@@ -15,11 +15,12 @@ let currentNumbers = [];
 let isAnimating = false;
 
 const BALL_STYLES = [
-  { range: [1, 10], className: "ball--yellow", colors: ["#f6c243", "#f2a91a"] },
-  { range: [11, 20], className: "ball--blue", colors: ["#4e85ff", "#2f64d6"] },
-  { range: [21, 30], className: "ball--red", colors: ["#ff6f55", "#e24b32"] },
-  { range: [31, 40], className: "ball--gray", colors: ["#8c95a1", "#69717c"] },
-  { range: [41, 45], className: "ball--green", colors: ["#5bbf6c", "#3a9a4c"] },
+  // Same range classes used on dhlottery: 1-10, 11-20, 21-30, 31-40, 41-45.
+  { range: [1, 10], className: "num-0n", colors: ["#eec173", "#e08f00"] },
+  { range: [11, 20], className: "num-1n", colors: ["#73a8e8", "#0063cc"] },
+  { range: [21, 30], className: "num-2n", colors: ["#e98da0", "#d8314f"] },
+  { range: [31, 40], className: "num-3n", colors: ["#b0b3bf", "#6e7382"] },
+  { range: [41, 45], className: "num-4n", colors: ["#89cb96", "#2c9e44"] },
 ];
 
 function getBallStyle(num) {
@@ -162,7 +163,9 @@ function renderHistory() {
     const left = document.createElement("span");
     const right = document.createElement("span");
 
-    left.textContent = entry.numbers.join(" · ");
+    left.className = "history-numbers";
+    right.className = "history-date";
+    left.textContent = entry.numbers.join(" ");
     right.textContent = entry.savedAt;
 
     li.appendChild(left);
@@ -237,10 +240,10 @@ function renderNumbersImage(nums) {
   canvas.height = height;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#fffefb";
+  ctx.fillStyle = "#ffffff";
   drawRoundedRect(ctx, 0, 0, width, height, 20);
   ctx.fill();
-  ctx.strokeStyle = "rgba(31, 35, 40, 0.08)";
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.12)";
   ctx.lineWidth = 2;
   ctx.stroke();
 
@@ -258,14 +261,16 @@ function renderNumbersImage(nums) {
     ctx.arc(x, y, ballSize / 2, 0, Math.PI * 2);
     ctx.fillStyle = gradient;
     ctx.fill();
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.16)";
+    ctx.lineWidth = 2.2;
     ctx.stroke();
 
-    ctx.font = "600 26px 'Space Grotesk', Arial, sans-serif";
-    ctx.fillStyle = "#1f2328";
+    ctx.font = "800 26px 'Pretendard Variable', 'Pretendard', Arial, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+    ctx.fillText(String(num), x, y + 3);
+    ctx.fillStyle = "#ffffff";
     ctx.fillText(String(num), x, y + 1);
   });
 
@@ -310,7 +315,7 @@ async function capturePanelImage() {
   }
 
   const canvas = await window.html2canvas(panelEl, {
-    backgroundColor: "#fffefb",
+    backgroundColor: "#ffffff",
     scale: 2,
   });
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
