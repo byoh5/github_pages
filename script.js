@@ -1,4 +1,6 @@
-const numbersEl = document.getElementById("numbers");
+const gamesEl = document.getElementById("games");
+const gameCountEl = document.getElementById("gameCount");
+const gameCountButtons = Array.from(document.querySelectorAll("#gameCount [data-count]"));
 const generateBtn = document.getElementById("generate");
 const copyNumbersImageBtn = document.getElementById("copyNumbersImage");
 const copyPanelImageBtn = document.getElementById("copyPanelImage");
@@ -11,7 +13,8 @@ const panelEl = document.querySelector(".panel");
 const STORAGE_KEY = "lotto_history_v1";
 const REVEAL_TOTAL_MS = 5000;
 const ROLL_TICK_MS = 60;
-let currentNumbers = [];
+let selectedGameCount = 5;
+let currentGames = [];
 let isAnimating = false;
 
 const BALL_STYLES = [
@@ -62,23 +65,38 @@ function pickNumbers(fixedNumbers) {
   return picks;
 }
 
-function renderNumbers(nums) {
-  numbersEl.innerHTML = "";
-  nums.forEach((num) => {
-    const span = document.createElement("span");
-    applyBallAppearance(span, num, false, ["pop"]);
-    numbersEl.appendChild(span);
-  });
-}
+function createGameSlots(gameCount) {
+  gamesEl.innerHTML = "";
+  const matrix = [];
 
-function createBallSlots() {
-  numbersEl.innerHTML = "";
-  for (let i = 0; i < 6; i += 1) {
-    const span = document.createElement("span");
-    span.className = "ball";
-    span.textContent = "?";
-    numbersEl.appendChild(span);
+  for (let g = 0; g < gameCount; g += 1) {
+    const row = document.createElement("div");
+    row.className = "game-row";
+
+    const label = document.createElement("div");
+    label.className = "game-label";
+    label.textContent = `Game ${g + 1}`;
+
+    const ballsWrap = document.createElement("div");
+    ballsWrap.className = "game-balls";
+    ballsWrap.setAttribute("aria-label", `Game ${g + 1} 번호`);
+
+    const balls = [];
+    for (let i = 0; i < 6; i += 1) {
+      const span = document.createElement("span");
+      span.className = "ball";
+      span.textContent = "?";
+      ballsWrap.appendChild(span);
+      balls.push(span);
+    }
+
+    row.appendChild(label);
+    row.appendChild(ballsWrap);
+    gamesEl.appendChild(row);
+    matrix.push(balls);
   }
+
+  return matrix;
 }
 
 function rollBall(el, finalNumber, duration) {
@@ -100,13 +118,15 @@ function rollBall(el, finalNumber, duration) {
   });
 }
 
-async function animateReveal(finalNumbers) {
-  createBallSlots();
-  const balls = Array.from(numbersEl.children);
-  const slotDuration = Math.floor(REVEAL_TOTAL_MS / finalNumbers.length);
+async function animateRevealGames(games) {
+  const ballMatrix = createGameSlots(games.length);
+  const slotDuration = Math.floor(REVEAL_TOTAL_MS / 6);
 
-  for (let i = 0; i < finalNumbers.length; i += 1) {
-    await rollBall(balls[i], finalNumbers[i], slotDuration);
+  for (let pos = 0; pos < 6; pos += 1) {
+    const tasks = games.map((nums, gameIndex) =>
+      rollBall(ballMatrix[gameIndex][pos], nums[pos], slotDuration),
+    );
+    await Promise.all(tasks);
   }
 }
 
@@ -185,9 +205,9 @@ function formatDate(date) {
 
 function setControlsDisabled(disabled) {
   generateBtn.disabled = disabled;
-  copyNumbersImageBtn.disabled = disabled || currentNumbers.length !== 6;
-  copyPanelImageBtn.disabled = disabled || currentNumbers.length !== 6;
-  saveBtn.disabled = disabled || currentNumbers.length !== 6;
+  copyNumbersImageBtn.disabled = disabled || currentGames.length === 0;
+  copyPanelImageBtn.disabled = disabled || currentGames.length === 0;
+  saveBtn.disabled = disabled || currentGames.length === 0;
   clearBtn.disabled = disabled;
 }
 
@@ -205,13 +225,10 @@ generateBtn.addEventListener("click", async () => {
   isAnimating = true;
   setControlsDisabled(true);
 
-  currentNumbers = pickNumbers(fixed);
-  await animateReveal(currentNumbers);
+  currentGames = Array.from({ length: selectedGameCount }, () => pickNumbers(fixed));
+  await animateRevealGames(currentGames);
 
   isAnimating = false;
-  copyNumbersImageBtn.disabled = false;
-  copyPanelImageBtn.disabled = false;
-  saveBtn.disabled = false;
   setControlsDisabled(false);
 });
 
@@ -229,12 +246,14 @@ function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-function renderNumbersImage(nums) {
+function renderGamesImage(games) {
   const ballSize = 70;
   const gap = 14;
+  const rowGap = 14;
   const padding = 28;
-  const width = padding * 2 + ballSize * nums.length + gap * (nums.length - 1);
-  const height = padding * 2 + ballSize;
+  const labelWidth = games.length > 1 ? 108 : 0;
+  const width = padding * 2 + labelWidth + ballSize * 6 + gap * 5;
+  const height = padding * 2 + ballSize * games.length + rowGap * (games.length - 1);
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -247,38 +266,50 @@ function renderNumbersImage(nums) {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  nums.forEach((num, index) => {
-    const style = getBallStyle(num);
-    const x = padding + index * (ballSize + gap) + ballSize / 2;
-    const y = padding + ballSize / 2;
+  games.forEach((nums, rowIndex) => {
+    const baseY = padding + rowIndex * (ballSize + rowGap) + ballSize / 2;
 
-    const gradient = ctx.createRadialGradient(x - 12, y - 12, 10, x, y, ballSize / 2);
-    gradient.addColorStop(0, "#fff");
-    gradient.addColorStop(0.45, style.colors[0]);
-    gradient.addColorStop(1, style.colors[1]);
+    if (labelWidth > 0) {
+      ctx.font = "800 18px 'Pretendard Variable', 'Pretendard', Arial, sans-serif";
+      ctx.fillStyle = "#1f2328";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`Game ${rowIndex + 1}`, padding, baseY);
+    }
 
-    ctx.beginPath();
-    ctx.arc(x, y, ballSize / 2, 0, Math.PI * 2);
-    ctx.fillStyle = gradient;
-    ctx.fill();
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.16)";
-    ctx.lineWidth = 2.2;
-    ctx.stroke();
+    nums.forEach((num, index) => {
+      const style = getBallStyle(num);
+      const x = padding + labelWidth + index * (ballSize + gap) + ballSize / 2;
+      const y = baseY;
 
-    ctx.font = "800 26px 'Pretendard Variable', 'Pretendard', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
-    ctx.fillText(String(num), x, y + 3);
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(String(num), x, y + 1);
+      const gradient = ctx.createRadialGradient(x - 12, y - 12, 10, x, y, ballSize / 2);
+      gradient.addColorStop(0, "#fff");
+      gradient.addColorStop(0.45, style.colors[0]);
+      gradient.addColorStop(1, style.colors[1]);
+
+      ctx.beginPath();
+      ctx.arc(x, y, ballSize / 2, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0, 0, 0, 0.16)";
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+
+      ctx.font = "800 26px 'Pretendard Variable', 'Pretendard', Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+      ctx.fillText(String(num), x, y + 3);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText(String(num), x, y + 1);
+    });
   });
 
   return canvas;
 }
 
 async function copyNumbersImage() {
-  if (currentNumbers.length !== 6) return;
+  if (currentGames.length === 0) return;
   if (!navigator.clipboard || !window.ClipboardItem) {
     alert("이미지 복사는 최신 브라우저에서만 지원됩니다.");
     return;
@@ -288,7 +319,7 @@ async function copyNumbersImage() {
     return;
   }
 
-  const canvas = renderNumbersImage(currentNumbers);
+  const canvas = renderGamesImage(currentGames);
   const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   if (!blob) {
     alert("이미지 생성에 실패했습니다.");
@@ -340,12 +371,15 @@ copyPanelImageBtn.addEventListener("click", () => {
 });
 
 saveBtn.addEventListener("click", () => {
-  if (currentNumbers.length !== 6) return;
+  if (currentGames.length === 0) return;
   const items = loadHistory();
-  items.unshift({
-    numbers: currentNumbers,
-    savedAt: formatDate(new Date()),
-  });
+  const savedAt = formatDate(new Date());
+  for (let i = currentGames.length - 1; i >= 0; i -= 1) {
+    items.unshift({
+      numbers: currentGames[i],
+      savedAt,
+    });
+  }
   saveHistory(items.slice(0, 20));
   renderHistory();
 });
@@ -356,3 +390,25 @@ clearBtn.addEventListener("click", () => {
 });
 
 renderHistory();
+
+function setSelectedGameCount(count) {
+  selectedGameCount = count;
+  gameCountButtons.forEach((btn) => {
+    const isActive = Number(btn.dataset.count) === count;
+    btn.classList.toggle("is-active", isActive);
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
+gameCountButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (isAnimating) return;
+    setSelectedGameCount(Number(btn.dataset.count));
+    if (currentGames.length === 0) {
+      createGameSlots(selectedGameCount);
+    }
+  });
+});
+
+setSelectedGameCount(selectedGameCount);
+createGameSlots(selectedGameCount);

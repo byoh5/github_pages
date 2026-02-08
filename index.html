@@ -23,18 +23,17 @@
     <main class="page">
       <header class="hero">
         <h1>로또 번호 생성기</h1>
-        <p class="sub">한 번에 6개 번호를 뽑아보세요.</p>
+        <p class="sub">여러 게임을 한 번에 뽑아보세요!</p>
       </header>
 
       <section class="panel" aria-live="polite">
-        <div class="numbers" id="numbers" role="status" aria-label="생성된 번호">
-          <span class="ball">?</span>
-          <span class="ball">?</span>
-          <span class="ball">?</span>
-          <span class="ball">?</span>
-          <span class="ball">?</span>
-          <span class="ball">?</span>
+        <div class="segmented" id="gameCount" role="group" aria-label="생성 게임 수">
+          <button type="button" class="seg" data-count="1" aria-pressed="false">1게임</button>
+          <button type="button" class="seg is-active" data-count="5" aria-pressed="true">5게임 (추천)</button>
+          <button type="button" class="seg" data-count="10" aria-pressed="false">10게임</button>
         </div>
+
+        <div class="games" id="games" role="status" aria-label="생성된 번호"></div>
 
         <div class="fixed-panel" aria-label="고정 번호 선택">
           <p class="fixed-title">고정 번호 (선택)</p>
@@ -50,7 +49,7 @@
         </div>
 
         <div class="controls">
-          <button id="generate" class="primary">번호 생성</button>
+          <button id="generate" class="primary">한 번에 생성</button>
           <button id="copyNumbersImage" class="ghost" disabled>번호 이미지</button>
           <button id="copyPanelImage" class="ghost" disabled>전체 캡처</button>
           <button id="save" class="ghost" disabled>저장</button>
