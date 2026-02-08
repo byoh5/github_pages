@@ -280,18 +280,21 @@ h1 {
 }
 
 .fixed-slots {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  gap: 8px;
   padding: 8px 4px;
 }
 
 .fixed-slot {
   cursor: pointer;
-  width: 48px;
-  height: 48px;
-  font-size: 1.12rem;
+  width: 100%;
+  max-width: 48px;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  font-size: clamp(0.95rem, 3.5vw, 1.12rem);
 }
 
 .fixed-slot:focus-visible {
@@ -636,6 +639,15 @@ button.ball:disabled {
 
   .controls {
     grid-template-columns: 1fr;
+  }
+
+  .fixed-slots {
+    gap: 6px;
+  }
+
+  .fixed-slot {
+    max-width: 42px;
+    font-size: clamp(0.92rem, 3.7vw, 1.05rem);
   }
 
   .sheet-grid {

@@ -373,14 +373,7 @@ async function copyNumbersImage() {
     return;
   }
   const filename = `lotto_${formatDate(new Date()).replace(/[: ]/g, "-")}_${currentGames.length}games.png`;
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  await shareOrDownloadImage(blob, filename, "로또 번호");
 }
 
 async function capturePanelImage() {
@@ -400,25 +393,50 @@ async function capturePanelImage() {
     return;
   }
   const filename = `lotto_panel_${formatDate(new Date()).replace(/[: ]/g, "-")}.png`;
+  await shareOrDownloadImage(blob, filename, "로또 전체 캡처");
+}
+
+async function shareOrDownloadImage(blob, filename, title) {
+  const file = new File([blob], filename, { type: "image/png" });
+
+  if (window.isSecureContext && navigator.share) {
+    try {
+      if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title });
+        return;
+      }
+    } catch (err) {
+      if (err?.name === "AbortError") return;
+    }
+  }
+
+  // Fallback: download (Android/desktop) or open in a new tab (iOS Safari often ignores download).
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (err) {
+    window.open(url, "_blank", "noopener,noreferrer");
+    alert("이미지가 새 탭으로 열렸습니다. 길게 눌러 저장해 주세요.");
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
 }
 
 copyNumbersImageBtn.addEventListener("click", () => {
   copyNumbersImage().catch(() => {
-    alert("이미지 복사에 실패했습니다.");
+    alert("이미지 저장에 실패했습니다.");
   });
 });
 
 copyPanelImageBtn.addEventListener("click", () => {
   capturePanelImage().catch(() => {
-    alert("전체 캡처에 실패했습니다.");
+    alert("전체 캡처 저장에 실패했습니다.");
   });
 });
 
