@@ -159,8 +159,8 @@ h1 {
 
 .game-balls {
   display: flex;
-  flex-wrap: wrap;
   justify-content: center;
+  flex-wrap: nowrap;
   gap: 12px;
 }
 
@@ -585,13 +585,19 @@ button.ball:disabled {
   }
 
   .game-balls {
-    gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: center;
+    justify-items: center;
+    gap: 8px;
   }
 
-  .ball {
-    width: 48px;
-    height: 48px;
-    font-size: 1.1rem;
+  .game-balls .ball {
+    width: 100%;
+    max-width: 48px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    font-size: clamp(0.95rem, 3.5vw, 1.1rem);
   }
 
   .controls {
@@ -620,13 +626,12 @@ button.ball:disabled {
   }
 
   .game-balls {
-    gap: 8px;
+    gap: 6px;
   }
 
-  .ball {
-    width: 42px;
-    height: 42px;
-    font-size: 1.02rem;
+  .game-balls .ball {
+    max-width: 42px;
+    font-size: clamp(0.92rem, 3.7vw, 1.05rem);
   }
 
   .controls {
