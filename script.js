@@ -1,9 +1,6 @@
 const gamesEl = document.getElementById("games");
-const gameCountEl = document.getElementById("gameCount");
 const gameCountButtons = Array.from(document.querySelectorAll("#gameCount [data-count]"));
 const generateBtn = document.getElementById("generate");
-const copyNumbersImageBtn = document.getElementById("copyNumbersImage");
-const copyPanelImageBtn = document.getElementById("copyPanelImage");
 const saveBtn = document.getElementById("save");
 const clearBtn = document.getElementById("clear");
 const historyList = document.getElementById("historyList");
@@ -15,13 +12,6 @@ const sheetCloseBtn = document.getElementById("sheetClose");
 const sheetDoneBtn = document.getElementById("sheetDone");
 const sheetClearSlotBtn = document.getElementById("sheetClearSlot");
 const sheetSubEl = document.getElementById("sheetSub");
-const imageSheetEl = document.getElementById("imageSheet");
-const imageSheetImgEl = document.getElementById("imageSheetImg");
-const imageSheetCloseBtn = document.getElementById("imageSheetClose");
-const imageSheetDownloadBtn = document.getElementById("imageSheetDownload");
-const imageSheetShareBtn = document.getElementById("imageSheetShare");
-const imageSheetTitleEl = document.getElementById("imageSheetTitle");
-const panelEl = document.querySelector(".panel");
 
 const STORAGE_KEY = "lotto_history_v1";
 const REVEAL_TOTAL_MS = 5000;
@@ -31,10 +21,6 @@ let currentGames = [];
 let isAnimating = false;
 let fixedNumbers = new Array(6).fill(null);
 let activeFixedSlot = 0;
-let imageSheetObjectUrl = null;
-let imageSheetBlob = null;
-let imageSheetFilename = "";
-let imageSheetTitle = "";
 
 const BALL_STYLES = [
   // Same range classes used on dhlottery: 1-10, 11-20, 21-30, 31-40, 41-45.
@@ -167,9 +153,8 @@ function renderFixedSlots() {
 }
 
 function updateSheetState() {
-  const anyOpen =
-    (sheetBackdropEl && !sheetBackdropEl.hidden) || (imageSheetEl && !imageSheetEl.hidden);
-  document.body.classList.toggle("has-sheet", anyOpen);
+  const anyOpen = sheetBackdropEl && !sheetBackdropEl.hidden;
+  document.body.classList.toggle("has-sheet", Boolean(anyOpen));
 }
 
 function closeNumberSheet() {
@@ -214,55 +199,11 @@ function renderNumberSheet() {
 
 function openNumberSheet(slotIndex) {
   activeFixedSlot = slotIndex;
-  closeImageSheet();
   renderNumberSheet();
 
   if (!sheetBackdropEl) return;
   sheetBackdropEl.hidden = false;
   sheetBackdropEl.setAttribute("aria-hidden", "false");
-  updateSheetState();
-}
-
-function closeImageSheet() {
-  if (!imageSheetEl) return;
-  imageSheetEl.hidden = true;
-  imageSheetEl.setAttribute("aria-hidden", "true");
-  if (imageSheetObjectUrl) {
-    URL.revokeObjectURL(imageSheetObjectUrl);
-    imageSheetObjectUrl = null;
-  }
-  imageSheetBlob = null;
-  imageSheetFilename = "";
-  imageSheetTitle = "";
-  updateSheetState();
-}
-
-function openImageSheet(blob, filename, title) {
-  closeNumberSheet();
-  imageSheetBlob = blob;
-  imageSheetFilename = filename;
-  imageSheetTitle = title;
-
-  if (imageSheetTitleEl) {
-    imageSheetTitleEl.textContent = title;
-  }
-  if (imageSheetImgEl) {
-    if (imageSheetObjectUrl) URL.revokeObjectURL(imageSheetObjectUrl);
-    imageSheetObjectUrl = URL.createObjectURL(blob);
-    imageSheetImgEl.src = imageSheetObjectUrl;
-  }
-
-  if (imageSheetShareBtn) {
-    const canShare =
-      window.isSecureContext &&
-      navigator.share &&
-      (!navigator.canShare || navigator.canShare({ files: [new File([blob], filename, { type: "image/png" })] }));
-    imageSheetShareBtn.disabled = !canShare;
-  }
-
-  if (!imageSheetEl) return;
-  imageSheetEl.hidden = false;
-  imageSheetEl.setAttribute("aria-hidden", "false");
   updateSheetState();
 }
 
@@ -318,8 +259,6 @@ function formatDate(date) {
 
 function setControlsDisabled(disabled) {
   generateBtn.disabled = disabled;
-  copyNumbersImageBtn.disabled = disabled || currentGames.length === 0;
-  copyPanelImageBtn.disabled = disabled || currentGames.length === 0;
   saveBtn.disabled = disabled || currentGames.length === 0;
   clearBtn.disabled = disabled;
   gameCountButtons.forEach((btn) => {
@@ -346,148 +285,6 @@ generateBtn.addEventListener("click", async () => {
 
   isAnimating = false;
   setControlsDisabled(false);
-});
-
-function drawRoundedRect(ctx, x, y, width, height, radius) {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-}
-
-function renderGamesImage(games) {
-  const ballSize = 70;
-  const gap = 14;
-  const rowGap = 14;
-  const padding = 28;
-  const labelWidth = games.length > 1 ? 108 : 0;
-  const width = padding * 2 + labelWidth + ballSize * 6 + gap * 5;
-  const height = padding * 2 + ballSize * games.length + rowGap * (games.length - 1);
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#ffffff";
-  drawRoundedRect(ctx, 0, 0, width, height, 20);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.12)";
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  games.forEach((nums, rowIndex) => {
-    const baseY = padding + rowIndex * (ballSize + rowGap) + ballSize / 2;
-
-    if (labelWidth > 0) {
-      ctx.font = "800 18px 'Pretendard Variable', 'Pretendard', Arial, sans-serif";
-      ctx.fillStyle = "#1f2328";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillText(`Game ${rowIndex + 1}`, padding, baseY);
-    }
-
-    nums.forEach((num, index) => {
-      const style = getBallStyle(num);
-      const x = padding + labelWidth + index * (ballSize + gap) + ballSize / 2;
-      const y = baseY;
-
-      const gradient = ctx.createRadialGradient(x - 12, y - 12, 10, x, y, ballSize / 2);
-      gradient.addColorStop(0, "#fff");
-      gradient.addColorStop(0.45, style.colors[0]);
-      gradient.addColorStop(1, style.colors[1]);
-
-      ctx.beginPath();
-      ctx.arc(x, y, ballSize / 2, 0, Math.PI * 2);
-      ctx.fillStyle = gradient;
-      ctx.fill();
-      ctx.strokeStyle = "rgba(0, 0, 0, 0.16)";
-      ctx.lineWidth = 2.2;
-      ctx.stroke();
-
-      ctx.font = "800 26px 'Pretendard Variable', 'Pretendard', Arial, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
-      ctx.fillText(String(num), x, y + 3);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(String(num), x, y + 1);
-    });
-  });
-
-  return canvas;
-}
-
-async function copyNumbersImage() {
-  if (currentGames.length === 0) return;
-  const canvas = renderGamesImage(currentGames);
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-  if (!blob) {
-    alert("이미지 생성에 실패했습니다.");
-    return;
-  }
-  const filename = `lotto_${formatDate(new Date()).replace(/[: ]/g, "-")}_${currentGames.length}games.png`;
-  openImageSheet(blob, filename, "로또 번호");
-}
-
-async function capturePanelImage() {
-  if (!panelEl) return;
-  if (!window.html2canvas) {
-    alert("전체 캡처를 위해 html2canvas가 필요합니다.");
-    return;
-  }
-
-  const canvas = await window.html2canvas(panelEl, {
-    backgroundColor: "#ffffff",
-    scale: 2,
-  });
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-  if (!blob) {
-    alert("이미지 생성에 실패했습니다.");
-    return;
-  }
-  const filename = `lotto_panel_${formatDate(new Date()).replace(/[: ]/g, "-")}.png`;
-  openImageSheet(blob, filename, "로또 전체 캡처");
-}
-
-async function downloadImage(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
-}
-
-async function shareImage(blob, filename, title) {
-  if (!window.isSecureContext || !navigator.share) {
-    throw new Error("share_not_supported");
-  }
-  const file = new File([blob], filename, { type: "image/png" });
-  if (navigator.canShare && !navigator.canShare({ files: [file] })) {
-    throw new Error("share_not_supported");
-  }
-  await navigator.share({ files: [file], title });
-}
-
-copyNumbersImageBtn.addEventListener("click", () => {
-  copyNumbersImage().catch(() => {
-    alert("이미지 저장에 실패했습니다.");
-  });
-});
-
-copyPanelImageBtn.addEventListener("click", () => {
-  capturePanelImage().catch(() => {
-    alert("전체 캡처 저장에 실패했습니다.");
-  });
 });
 
 saveBtn.addEventListener("click", () => {
@@ -573,46 +370,11 @@ if (sheetBackdropEl) {
   });
 }
 
-if (imageSheetEl) {
-  imageSheetEl.addEventListener("click", (event) => {
-    if (event.target === imageSheetEl) {
-      closeImageSheet();
-    }
-  });
-}
-
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   if (sheetBackdropEl && !sheetBackdropEl.hidden) {
     closeNumberSheet();
-    return;
-  }
-  if (imageSheetEl && !imageSheetEl.hidden) {
-    closeImageSheet();
   }
 });
 
 renderFixedSlots();
-
-if (imageSheetCloseBtn) {
-  imageSheetCloseBtn.addEventListener("click", closeImageSheet);
-}
-
-if (imageSheetDownloadBtn) {
-  imageSheetDownloadBtn.addEventListener("click", () => {
-    if (!imageSheetBlob) return;
-    downloadImage(imageSheetBlob, imageSheetFilename).catch(() => {
-      alert("파일 저장에 실패했습니다.");
-    });
-  });
-}
-
-if (imageSheetShareBtn) {
-  imageSheetShareBtn.addEventListener("click", () => {
-    if (!imageSheetBlob) return;
-    shareImage(imageSheetBlob, imageSheetFilename, imageSheetTitle).catch((err) => {
-      if (err?.name === "AbortError") return;
-      alert("공유/저장이 지원되지 않는 브라우저입니다. 이미지를 길게 눌러 저장해 주세요.");
-    });
-  });
-}

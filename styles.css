@@ -280,21 +280,17 @@ h1 {
 }
 
 .fixed-slots {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  display: flex;
+  justify-content: center;
+  flex-wrap: nowrap;
   align-items: center;
-  justify-items: center;
-  gap: 8px;
-  padding: 8px 4px;
+  gap: 12px;
+  padding: 0;
 }
 
 .fixed-slot {
   cursor: pointer;
-  width: 100%;
-  max-width: 48px;
-  height: auto;
-  aspect-ratio: 1 / 1;
-  font-size: clamp(0.95rem, 3.5vw, 1.12rem);
+  touch-action: manipulation;
 }
 
 .fixed-slot:focus-visible {
@@ -479,25 +475,6 @@ button.ball:disabled {
   padding: 14px;
 }
 
-.sheet--image {
-  max-height: min(86vh, 820px);
-}
-
-.image-preview {
-  border-radius: 18px;
-  border: 1px solid var(--stroke);
-  background: #ffffff;
-  box-shadow: 0 10px 22px rgba(16, 24, 40, 0.12);
-  overflow: hidden;
-  margin: 6px;
-}
-
-.image-preview img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 .sheet-header {
   display: flex;
   align-items: center;
@@ -606,7 +583,8 @@ button.ball:disabled {
     text-align: left;
   }
 
-  .game-balls {
+  .game-balls,
+  .fixed-slots {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     align-items: center;
@@ -614,7 +592,8 @@ button.ball:disabled {
     gap: 8px;
   }
 
-  .game-balls .ball {
+  .game-balls .ball,
+  .fixed-slots .ball {
     width: 100%;
     max-width: 48px;
     height: auto;
@@ -647,26 +626,19 @@ button.ball:disabled {
     padding: 18px;
   }
 
-  .game-balls {
+  .game-balls,
+  .fixed-slots {
     gap: 6px;
   }
 
-  .game-balls .ball {
+  .game-balls .ball,
+  .fixed-slots .ball {
     max-width: 42px;
     font-size: clamp(0.92rem, 3.7vw, 1.05rem);
   }
 
   .controls {
     grid-template-columns: 1fr;
-  }
-
-  .fixed-slots {
-    gap: 6px;
-  }
-
-  .fixed-slot {
-    max-width: 42px;
-    font-size: clamp(0.92rem, 3.7vw, 1.05rem);
   }
 
   .sheet-grid {
