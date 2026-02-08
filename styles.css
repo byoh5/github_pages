@@ -91,6 +91,31 @@ h1 {
   font-size: 1.4rem;
 }
 
+.ball--yellow {
+  background: radial-gradient(circle at 30% 30%, #fff, #f7d67c 60%, #f2a91a 100%);
+  border-color: rgba(242, 169, 26, 0.55);
+}
+
+.ball--blue {
+  background: radial-gradient(circle at 30% 30%, #fff, #8eb3ff 60%, #2f64d6 100%);
+  border-color: rgba(47, 100, 214, 0.5);
+}
+
+.ball--red {
+  background: radial-gradient(circle at 30% 30%, #fff, #ff9a84 60%, #e24b32 100%);
+  border-color: rgba(226, 75, 50, 0.5);
+}
+
+.ball--gray {
+  background: radial-gradient(circle at 30% 30%, #fff, #b7bcc3 60%, #69717c 100%);
+  border-color: rgba(105, 113, 124, 0.55);
+}
+
+.ball--green {
+  background: radial-gradient(circle at 30% 30%, #fff, #9be3ad 60%, #3a9a4c 100%);
+  border-color: rgba(58, 154, 76, 0.5);
+}
+
 .controls {
   display: flex;
   flex-wrap: wrap;
