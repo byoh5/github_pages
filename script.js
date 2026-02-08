@@ -21,6 +21,14 @@ let isAnimating = false;
 let fixedNumbers = new Array(6).fill(null);
 let activeFixedSlot = 0;
 
+const GENERATE_PHRASES = [
+  "인생역전 이번엔 내 차례",
+  "이 버튼이 내 미래다",
+  "오늘은 느낌에 온다",
+  "혹시.. 이번엔 진짜?",
+];
+let generatePhraseIndex = 0;
+
 const BALL_STYLES = [
   // Same range classes used on dhlottery: 1-10, 11-20, 21-30, 31-40, 41-45.
   { range: [1, 10], className: "num-0n", colors: ["#eec173", "#e08f00"] },
@@ -294,6 +302,9 @@ generateBtn.addEventListener("click", async () => {
   closeNumberSheet();
   const fixed = fixedNumbers.slice();
 
+  generatePhraseIndex = (generatePhraseIndex + 1) % GENERATE_PHRASES.length;
+  generateBtn.textContent = GENERATE_PHRASES[generatePhraseIndex];
+
   isAnimating = true;
   setControlsDisabled(true);
 
@@ -338,6 +349,8 @@ gameCountButtons.forEach((btn) => {
 
 setSelectedGameCount(selectedGameCount);
 createGameSlots(selectedGameCount);
+
+generateBtn.textContent = GENERATE_PHRASES[generatePhraseIndex];
 
 fixedSlots.forEach((slotBtn) => {
   slotBtn.addEventListener("click", () => {
