@@ -209,14 +209,52 @@ button:hover:not(:disabled) {
 
   .numbers {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .fixed-inputs {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .ball {
     height: 60px;
+    font-size: 1.2rem;
+  }
+
+  button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .controls {
+    gap: 10px;
+  }
+
+  .history-list li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 420px) {
+  .page {
+    padding: 36px 16px 64px;
+  }
+
+  .panel {
+    padding: 18px;
+  }
+
+  .ball {
+    height: 52px;
+    font-size: 1.05rem;
+  }
+
+  .fixed-input {
+    padding: 8px 6px;
+    font-size: 0.95rem;
   }
 }
 
