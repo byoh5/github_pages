@@ -164,6 +164,11 @@ h1 {
   gap: 12px;
 }
 
+.game-balls .ball,
+.fixed-slots .ball {
+  flex: 0 0 auto;
+}
+
 .ball {
   --ball-color: #e6e9f1;
   width: 56px;
@@ -399,9 +404,25 @@ button.ball:disabled {
   box-shadow: 0 14px 32px rgba(16, 24, 40, 0.1);
 }
 
-.history h2 {
+.history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin: 0 0 12px;
+}
+
+.history-head h2 {
+  margin: 0;
   font-weight: 800;
+}
+
+.history-clear {
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .history-list {

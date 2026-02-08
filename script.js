@@ -1,9 +1,8 @@
 const gamesEl = document.getElementById("games");
 const gameCountButtons = Array.from(document.querySelectorAll("#gameCount [data-count]"));
 const generateBtn = document.getElementById("generate");
-const saveBtn = document.getElementById("save");
-const clearBtn = document.getElementById("clear");
 const historyList = document.getElementById("historyList");
+const clearHistoryBtn = document.getElementById("clearHistory");
 const fixedSlots = Array.from(document.querySelectorAll("#fixedSlots [data-slot]"));
 const fixedClearBtn = document.getElementById("fixedClear");
 const sheetBackdropEl = document.getElementById("numberSheet");
@@ -221,9 +220,26 @@ function saveHistory(items) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 }
 
+function appendGamesToHistory(games) {
+  if (!games || games.length === 0) return;
+  const items = loadHistory();
+  const savedAt = formatDate(new Date());
+  for (let i = games.length - 1; i >= 0; i -= 1) {
+    items.unshift({
+      numbers: games[i],
+      savedAt,
+    });
+  }
+  saveHistory(items.slice(0, 20));
+}
+
 function renderHistory() {
   const items = loadHistory();
   historyList.innerHTML = "";
+
+  if (clearHistoryBtn) {
+    clearHistoryBtn.disabled = items.length === 0 || isAnimating;
+  }
 
   if (items.length === 0) {
     const empty = document.createElement("li");
@@ -259,8 +275,6 @@ function formatDate(date) {
 
 function setControlsDisabled(disabled) {
   generateBtn.disabled = disabled;
-  saveBtn.disabled = disabled || currentGames.length === 0;
-  clearBtn.disabled = disabled;
   gameCountButtons.forEach((btn) => {
     btn.disabled = disabled;
   });
@@ -269,6 +283,9 @@ function setControlsDisabled(disabled) {
   });
   if (fixedClearBtn) {
     fixedClearBtn.disabled = disabled;
+  }
+  if (clearHistoryBtn) {
+    clearHistoryBtn.disabled = disabled || loadHistory().length === 0;
   }
 }
 
@@ -283,28 +300,19 @@ generateBtn.addEventListener("click", async () => {
   currentGames = Array.from({ length: selectedGameCount }, () => pickNumbers(fixed));
   await animateRevealGames(currentGames);
 
+  appendGamesToHistory(currentGames);
+  renderHistory();
+
   isAnimating = false;
   setControlsDisabled(false);
 });
 
-saveBtn.addEventListener("click", () => {
-  if (currentGames.length === 0) return;
-  const items = loadHistory();
-  const savedAt = formatDate(new Date());
-  for (let i = currentGames.length - 1; i >= 0; i -= 1) {
-    items.unshift({
-      numbers: currentGames[i],
-      savedAt,
-    });
-  }
-  saveHistory(items.slice(0, 20));
-  renderHistory();
-});
-
-clearBtn.addEventListener("click", () => {
-  localStorage.removeItem(STORAGE_KEY);
-  renderHistory();
-});
+if (clearHistoryBtn) {
+  clearHistoryBtn.addEventListener("click", () => {
+    localStorage.removeItem(STORAGE_KEY);
+    renderHistory();
+  });
+}
 
 renderHistory();
 
@@ -320,10 +328,11 @@ function setSelectedGameCount(count) {
 gameCountButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     if (isAnimating) return;
+    closeNumberSheet();
     setSelectedGameCount(Number(btn.dataset.count));
-    if (currentGames.length === 0) {
-      createGameSlots(selectedGameCount);
-    }
+    // Always reset the view when the user changes game count.
+    currentGames = [];
+    createGameSlots(selectedGameCount);
   });
 });
 

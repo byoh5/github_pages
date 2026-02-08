@@ -19,7 +19,7 @@
       href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
       crossorigin
     />
-    <link rel="stylesheet" href="styles.css?v=20260208-7" />
+    <link rel="stylesheet" href="styles.css?v=20260208-8" />
     <!--
       Adsense 준비용 메모
       1) <head>에 AdSense 스크립트를 삽입
@@ -61,13 +61,14 @@
 
         <div class="controls">
           <button id="generate" class="primary">한 번에 생성</button>
-          <button id="save" class="ghost" disabled>저장</button>
-          <button id="clear" class="ghost">기록 삭제</button>
         </div>
       </section>
 
       <section class="history" aria-label="저장된 번호">
-        <h2>저장된 번호</h2>
+        <div class="history-head">
+          <h2>저장된 번호</h2>
+          <button id="clearHistory" class="ghost history-clear" disabled>기록 삭제</button>
+        </div>
         <ul id="historyList" class="history-list"></ul>
       </section>
 
@@ -95,6 +96,6 @@
         </div>
       </div>
     </div>
-    <script src="script.js?v=20260208-7"></script>
+    <script src="script.js?v=20260208-8"></script>
   </body>
 </html>
