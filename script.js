@@ -3,20 +3,34 @@ const generateBtn = document.getElementById("generate");
 const saveBtn = document.getElementById("save");
 const clearBtn = document.getElementById("clear");
 const historyList = document.getElementById("historyList");
+const fixedInputs = Array.from(document.querySelectorAll(".fixed-input"));
 
 const STORAGE_KEY = "lotto_history_v1";
+const REVEAL_TOTAL_MS = 5000;
+const ROLL_TICK_MS = 60;
 let currentNumbers = [];
+let isAnimating = false;
 
-function pickNumbers() {
+function pickNumbers(fixedNumbers) {
   const pool = Array.from({ length: 45 }, (_, i) => i + 1);
-  const picks = [];
+  const picks = new Array(6).fill(null);
+  const used = new Set();
 
-  while (picks.length < 6) {
-    const idx = Math.floor(Math.random() * pool.length);
-    picks.push(pool.splice(idx, 1)[0]);
+  fixedNumbers.forEach((num, idx) => {
+    if (num === null) return;
+    picks[idx] = num;
+    used.add(num);
+  });
+
+  const available = pool.filter((num) => !used.has(num));
+
+  for (let i = 0; i < picks.length; i += 1) {
+    if (picks[i] !== null) continue;
+    const idx = Math.floor(Math.random() * available.length);
+    picks[i] = available.splice(idx, 1)[0];
   }
 
-  return picks.sort((a, b) => a - b);
+  return picks;
 }
 
 function renderNumbers(nums) {
@@ -27,6 +41,69 @@ function renderNumbers(nums) {
     span.textContent = num;
     numbersEl.appendChild(span);
   });
+}
+
+function createBallSlots() {
+  numbersEl.innerHTML = "";
+  for (let i = 0; i < 6; i += 1) {
+    const span = document.createElement("span");
+    span.className = "ball";
+    span.textContent = "?";
+    numbersEl.appendChild(span);
+  }
+}
+
+function rollBall(el, finalNumber, duration) {
+  return new Promise((resolve) => {
+    const endAt = Date.now() + duration;
+    el.classList.remove("pop");
+    el.classList.add("rolling");
+
+    const timer = setInterval(() => {
+      if (Date.now() >= endAt) {
+        clearInterval(timer);
+        el.textContent = finalNumber;
+        el.classList.remove("rolling");
+        el.classList.add("pop");
+        resolve();
+        return;
+      }
+      el.textContent = Math.floor(Math.random() * 45) + 1;
+    }, ROLL_TICK_MS);
+  });
+}
+
+async function animateReveal(finalNumbers) {
+  createBallSlots();
+  const balls = Array.from(numbersEl.children);
+  const slotDuration = Math.floor(REVEAL_TOTAL_MS / finalNumbers.length);
+
+  for (let i = 0; i < finalNumbers.length; i += 1) {
+    await rollBall(balls[i], finalNumbers[i], slotDuration);
+  }
+}
+
+function parseFixedInputs() {
+  const fixed = new Array(6).fill(null);
+  const seen = new Set();
+
+  for (let i = 0; i < fixedInputs.length; i += 1) {
+    const raw = fixedInputs[i].value.trim();
+    if (!raw) continue;
+    const num = Number(raw);
+
+    if (!Number.isInteger(num) || num < 1 || num > 45) {
+      throw new Error("고정 번호는 1~45 사이의 숫자만 가능합니다.");
+    }
+    if (seen.has(num)) {
+      throw new Error("고정 번호는 서로 다른 숫자여야 합니다.");
+    }
+
+    fixed[i] = num;
+    seen.add(num);
+  }
+
+  return fixed;
 }
 
 function loadHistory() {
@@ -77,10 +154,32 @@ function formatDate(date) {
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
 }
 
-generateBtn.addEventListener("click", () => {
-  currentNumbers = pickNumbers();
-  renderNumbers(currentNumbers);
+function setControlsDisabled(disabled) {
+  generateBtn.disabled = disabled;
+  saveBtn.disabled = disabled || currentNumbers.length !== 6;
+  clearBtn.disabled = disabled;
+}
+
+generateBtn.addEventListener("click", async () => {
+  if (isAnimating) return;
+  let fixed;
+
+  try {
+    fixed = parseFixedInputs();
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+
+  isAnimating = true;
+  setControlsDisabled(true);
+
+  currentNumbers = pickNumbers(fixed);
+  await animateReveal(currentNumbers);
+
+  isAnimating = false;
   saveBtn.disabled = false;
+  setControlsDisabled(false);
 });
 
 saveBtn.addEventListener("click", () => {

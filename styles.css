@@ -91,6 +91,47 @@ h1 {
   gap: 12px;
 }
 
+.fixed-panel {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px dashed var(--stroke);
+  background: #fffaf2;
+}
+
+.fixed-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.fixed-inputs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.fixed-input {
+  width: 100%;
+  padding: 10px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: white;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.fixed-input:focus {
+  outline: 2px solid rgba(27, 153, 139, 0.35);
+  border-color: rgba(27, 153, 139, 0.5);
+}
+
+.fixed-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 button {
   border: none;
   cursor: pointer;
@@ -170,6 +211,10 @@ button:hover:not(:disabled) {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .fixed-inputs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .ball {
     height: 60px;
   }
@@ -188,4 +233,23 @@ button:hover:not(:disabled) {
 
 .ball.pop {
   animation: pop 0.25s ease;
+}
+
+@keyframes flicker {
+  0% {
+    transform: translateY(0);
+    filter: blur(0.5px);
+  }
+  50% {
+    transform: translateY(-2px);
+    filter: blur(0);
+  }
+  100% {
+    transform: translateY(0);
+    filter: blur(0.5px);
+  }
+}
+
+.ball.rolling {
+  animation: flicker 0.2s linear infinite;
 }

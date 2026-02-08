@@ -31,6 +31,19 @@
           <span class="ball">?</span>
         </div>
 
+        <div class="fixed-panel" aria-label="고정 번호 선택">
+          <p class="fixed-title">고정 번호 (선택)</p>
+          <div class="fixed-inputs" id="fixedInputs">
+            <input class="fixed-input" type="number" min="1" max="45" placeholder="1" />
+            <input class="fixed-input" type="number" min="1" max="45" placeholder="2" />
+            <input class="fixed-input" type="number" min="1" max="45" placeholder="3" />
+            <input class="fixed-input" type="number" min="1" max="45" placeholder="4" />
+            <input class="fixed-input" type="number" min="1" max="45" placeholder="5" />
+            <input class="fixed-input" type="number" min="1" max="45" placeholder="6" />
+          </div>
+          <p class="fixed-hint">왼쪽부터 자리별로 고정됩니다. 비워두면 랜덤으로 채워집니다.</p>
+        </div>
+
         <div class="controls">
           <button id="generate" class="primary">번호 생성</button>
           <button id="save" class="ghost" disabled>저장</button>
