@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# TODO: 배포 URL 확정 후 아래 도메인을 실제 주소로 바꾸세요.
+# 예) https://username.github.io/repo/  (GitHub Pages 프로젝트 페이지)
+Sitemap: https://YOUR-DOMAIN-HERE/sitemap.xml
+

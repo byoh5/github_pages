@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!--
+    TODO: 배포 URL 확정 후 loc 도메인을 실제 주소로 바꾸세요.
+    예) https://username.github.io/repo/
+  -->
+  <url>
+    <loc>https://YOUR-DOMAIN-HERE/</loc>
+  </url>
+</urlset>
+
