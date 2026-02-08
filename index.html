@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>로또 번호 생성기</title>
+    <meta name="description" content="로또 번호를 빠르게 생성하고 저장할 수 있는 간단한 웹 도구" />
+    <link rel="stylesheet" href="styles.css" />
+    <!--
+      Adsense 준비용 메모
+      1) <head>에 AdSense 스크립트를 삽입
+      2) 본문 원하는 위치에 광고 슬롯(div/ins)을 배치
+      3) data-ad-client, data-ad-slot 값은 승인 후 대체
+    -->
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Lotto Helper</p>
+        <h1>로또 번호 생성기</h1>
+        <p class="sub">한 번에 6개 번호를 생성하고, 결과를 저장하세요.</p>
+      </header>
+
+      <section class="panel" aria-live="polite">
+        <div class="numbers" id="numbers" role="status" aria-label="생성된 번호">
+          <span class="ball">?</span>
+          <span class="ball">?</span>
+          <span class="ball">?</span>
+          <span class="ball">?</span>
+          <span class="ball">?</span>
+          <span class="ball">?</span>
+        </div>
+
+        <div class="controls">
+          <button id="generate" class="primary">번호 생성</button>
+          <button id="save" class="ghost" disabled>저장</button>
+          <button id="clear" class="ghost">기록 삭제</button>
+        </div>
+      </section>
+
+      <section class="history" aria-label="저장된 번호">
+        <h2>저장된 번호</h2>
+        <ul id="historyList" class="history-list"></ul>
+      </section>
+
+      <section class="ads">
+        <div class="ad-slot">
+          <p>광고 영역 (AdSense 승인 후 여기에 슬롯을 배치하세요)</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
